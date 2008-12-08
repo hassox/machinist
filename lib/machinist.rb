@@ -1,5 +1,4 @@
-require 'active_support'
-require 'active_record'
+require 'extlib'
 require 'sham'
  
 module Machinist
@@ -17,10 +16,7 @@ module Machinist
     @@nerfed
   end
   
-  module ActiveRecordExtensions
-    def self.included(base)
-      base.extend(ClassMethods)
-    end
+  module Extensions
     
     module ClassMethods
       def blueprint(&blueprint)
@@ -32,18 +28,18 @@ module Machinist
         lathe = Lathe.new(self.new, attributes)
         lathe.instance_eval(&@blueprint)
         unless Machinist.nerfed?
-          lathe.object.save!
-          lathe.object.reload
+          lathe.object.save!  if lathe.object.respond_to?(:save!)
+          lathe.object.reload if lathe.object.respond_to?(:reload)
         end
-        returning(lathe.object) do |object|
-          yield object if block_given?
-        end
+        lo = lathe.object
+        yield lo if block_given?
+        lo
       end
     
       def make_unsaved(attributes = {})
-        returning(Machinist.with_save_nerfed { make(attributes) }) do |object|
-          yield object if block_given?
-        end
+        obj = Machinist.with_save_nerfed { make(attributes) }
+        yield obj if block_given?
+        obj
       end
     end
   end
@@ -66,8 +62,8 @@ module Machinist
       else
         value = if block
           block.call
-        elsif args.first.is_a?(Hash) || args.empty?
-          symbol.to_s.camelize.constantize.make(args.first || {})
+        elsif args.first.instance_of?(Hash) || args.empty?
+          Object.full_const_get(symbol.to_s.camel_case).make(args.first || {})
         else
           args.first
         end
@@ -78,7 +74,7 @@ module Machinist
   end
 end
 
-class ActiveRecord::Base
-  include Machinist::ActiveRecordExtensions
-end
+# Auto extend base ORM's if they are present
+ActiveRecord::Base.extend(Machinist::Extensions::ClassMethods) if defined?(ActiveRecord)
+DataMapper::Resource::ClassMethods.class_eval{include Machinist::Extensions::ClassMethods} if defined?(DataMapper)
 

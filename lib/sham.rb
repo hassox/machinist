@@ -1,5 +1,3 @@
-require 'active_support'
-
 class Sham
   @@shams = {}
   
@@ -21,14 +19,14 @@ class Sham
   end
 
   def self.reset
-    @@shams.values.each(&:reset)
+    @@shams.values.each{|v| v.reset }
   end
   
   def initialize(name, options = {}, &block)
     @name      = name
     @generator = block
     @offset    = 0
-    @unique    = options.has_key?(:unique) ? options[:unique] : true
+    @unique    = options.keys.include?(:unique) ? options[:unique] : true
     generate_values(12)
   end
   
@@ -42,15 +40,14 @@ class Sham
       generate_values(2 * @values.length)
       raise "Can't generate more unique values for Sham.#{@name}" if @offset >= @values.length
     end
-    returning @values[@offset] do
-      @offset += 1
-    end
+    @offset += 1
+    @values[@offset - 1]
   end
     
 private
   
   def generate_values(count)
-    @values = seeded { (1..count).map(&@generator) }
+    @values = seeded{ (1..count).map{|i| @generator.call(i) } }
     @values.uniq! if @unique
   end
   

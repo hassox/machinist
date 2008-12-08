@@ -2,7 +2,7 @@ require File.dirname(__FILE__) + '/spec_helper'
 require 'machinist'
 
 class Base
-  include Machinist::ActiveRecordExtensions
+  extend Machinist::Extensions::ClassMethods
   
   def save!;  @saved = true;          end
   def reload; @reloaded = true; self; end
@@ -22,6 +22,19 @@ class Comment < Base
   attr_accessor :body
 end
 
+class Anything # Not from base... just a general class
+  extend Machinist::Extensions::ClassMethods
+  attr_accessor :name
+  attr_accessor :hair
+  attr_accessor :post
+  
+  def initialize(opts = {})
+    opts.each do |k,v|
+      instance_variable_set("@#{k}", v)
+    end
+  end
+end
+
 Post.blueprint do
   title "An Example Post"
   body  { "The quick brown fox." }
@@ -31,6 +44,12 @@ Comment.blueprint do
   post
   author "Fred Bloggs"
   body   "Just a comment."
+end
+
+Anything.blueprint do
+  post
+  name  "Homer"
+  hair  :none
 end
   
 describe Machinist do
@@ -106,5 +125,12 @@ describe Machinist do
     post.should_not be_saved
     comment.should  be_saved
     comment.post.should == post
+  end
+  
+  it "should be able to make a normal class" do
+    a = Anything.make
+    a.name.should == "Homer"
+    a.hair.should == :none
+    a.post.should be_an_instance_of(Post)
   end
 end
