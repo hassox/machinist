@@ -1,4 +1,5 @@
 require 'extlib'
+require 'faker'
 require 'sham'
  
 module Machinist
@@ -76,5 +77,4 @@ end
 
 # Auto extend base ORM's if they are present
 ActiveRecord::Base.extend(Machinist::Extensions::ClassMethods) if defined?(ActiveRecord)
-DataMapper::Resource::ClassMethods.class_eval{include Machinist::Extensions::ClassMethods} if defined?(DataMapper)
-
+DataMapper::Model.append_extensions(Machinist::Extensions::ClassMethods) if defined?(DataMapper)
