@@ -6,8 +6,7 @@ module Machinist
       true
     end
     
-    def save?
-      false
+    def self.save(obj)
     end
   end
 end
