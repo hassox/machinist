@@ -1,10 +1,45 @@
 require File.dirname(__FILE__) + '/spec_helper'
 require 'machinist'
 
+module Machinist
+  class SpecAdapter < AbstractAdapter
+    priority 0.5
+    def self.use_for_class?(klass)
+      $adapters ||= []
+      $adapters << self
+      true
+    end
+    
+    def self.save(obj)
+      obj.save!
+      obj.reload
+      obj
+    end
+  end
+  
+  class OtherAdapter < AbstractAdapter
+    priority 1
+    def self.use_for_class?(klass)
+      $adapters ||= []
+      $adapters << self
+      false
+    end
+  end
+  
+  class FooAdapter < AbstractAdapter
+    priority 0.8
+    def self.use_for_class?(klass)
+      $adapters ||= []
+      $adapters << self
+      false
+    end
+  end
+end
+
 # This is a stub version of ActiveRecord that has just enough functionality to
 # keep Machinist happy.
 class InactiveRecord
-  include Machinist::ActiveRecordExtensions
+  include Machinist::Extensions
 
   def initialize(attributes = {})
     self.protected_attributes ||= []
@@ -47,6 +82,19 @@ class Comment < InactiveRecord
 end
 
 describe Machinist do
+  before(:each){ $adapters = []}
+  
+  describe "adapters" do
+    it "should find a valid adapter for the object" do
+      Machinist.adapter_for(InactiveRecord).should == Machinist::SpecAdapter
+    end
+    
+    it "should try adapters in order of priority" do
+      Machinist.adapter_for(InactiveRecord)
+      $adapters.should == [Machinist::OtherAdapter, Machinist::FooAdapter, Machinist::SpecAdapter]
+    end
+  end
+  
   describe "make method" do
     it "should set an attribute on the constructed object from a constant in the blueprint" do
       Person.blueprint do
