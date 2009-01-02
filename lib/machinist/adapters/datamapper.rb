@@ -1,3 +1,4 @@
+require 'dm-core'
 module Machinist
   class DataMapperAdapter < AbstractAdapter
     priority 0.5 # Medium Priority
@@ -13,4 +14,4 @@ module Machinist
   end
 end
 
-DataMapper::Model.append_extensions(Machinist::Extensions::ClassMethods)
+DataMapper::Model.append_extensions(Machinist::Extensions::ClassMethods) if defined?(DataMapper)

@@ -1,6 +1,6 @@
 require 'active_support'
 require 'sham'
-require File.join(File.dirname(__FILE__), "adapters", "abstract")
+require File.join(File.dirname(__FILE__), "machinist", "adapters", "abstract")
  
 module Machinist
   # :api: private
@@ -85,4 +85,4 @@ module Machinist
   end
 end
 
-require File.join(File.dirname(__FILE__), 'adapters/active_record') if defined?(ActiveRecord)
+require File.join(File.dirname(__FILE__), 'machinist/adapters/active_record') if defined?(ActiveRecord)
